@@ -1,6 +1,6 @@
 FROM --platform=linux/amd64 node:14-slim
 
-WORKDIR /usr/src/app
+WORKDIR /src
 
 COPY package*.json ./
 
