@@ -47,6 +47,11 @@ app.get("/", (req, res) => {
   res.json({ message: "Hello from Express.js on EKS!" });
 });
 
+app.get("/workflows-test", (req, res) => {
+  res.json({ message: "Github Actions works!" });
+});
+
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
   console.log('=== Directory Structure at Startup ===');
