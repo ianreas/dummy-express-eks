@@ -18,6 +18,7 @@ RUN echo "=== Full directory structure ===" && \
 # Then create directory and set permissions
 RUN mkdir -p /usr/src/app/cron-jobs
 RUN chmod +x /usr/src/app/cron-jobs/*.js
+RUN apk add --no-cache git
 
 EXPOSE 3000
 
