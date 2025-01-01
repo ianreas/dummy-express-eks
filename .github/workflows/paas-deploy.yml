@@ -56,24 +56,24 @@ jobs:
         run: |
           if [ ! -f "Dockerfile" ]; then
             echo "No Dockerfile found, creating one..."
-            cat > Dockerfile << 'EOL'
-          FROM node:20-alpine AS builder
-          WORKDIR /app
-          COPY package*.json ./
-          RUN npm install
-          COPY . .
-          RUN npm run build
-          
-          FROM node:20-alpine AS runner
-          WORKDIR /app
-          COPY --from=builder /app/.next ./.next
-          COPY --from=builder /app/node_modules ./node_modules
-          COPY --from=builder /app/package.json ./package.json
-          COPY --from=builder /app/public ./public
-          
-          EXPOSE 3000
-          CMD ["npm", "start"]
-          EOL
+            cat > Dockerfile << 'EOF'
+            FROM node:20-alpine AS builder
+            WORKDIR /app
+            COPY package*.json ./
+            RUN npm install
+            COPY . .
+            RUN npm run build
+
+            FROM node:20-alpine AS runner
+            WORKDIR /app
+            COPY --from=builder /app/.next ./.next
+            COPY --from=builder /app/node_modules ./node_modules
+            COPY --from=builder /app/package.json ./package.json
+            COPY --from=builder /app/public ./public
+
+            EXPOSE 3000
+            CMD ["npm", "start"]
+            EOF
           fi
 
   deploy:
@@ -83,9 +83,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Git and other dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git curl jq
+
       - name: Deploy to PaaS
         run: |
-          curl -X POST "${PAAS_API_URL}/build-and-push-deploy" \
-          -H "Content-Type: application/json" \
-          -H "Authorization: Bearer ${PAAS_ACCESS_TOKEN}" \
-          -d "{\"repoFullName\":\"${{ github.repository }}\",\"accessToken\":\"${{ github.token }}\"}"
+          # Set up error handling
+          set -e
+          
+          # Make the API call and store the response
+          response=$(curl -s -w "\n%{http_code}" -X POST "${PAAS_API_URL}/build-and-push-deploy" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${PAAS_ACCESS_TOKEN}" \
+            -d "{\"repoFullName\":\"${{ github.repository }}\",\"accessToken\":\"${{ github.token }}\"}")
+          
+          # Extract the HTTP status code
+          http_code=$(echo "$response" | tail -n1)
+          # Extract the response body
+          body=$(echo "$response" | sed '$d')
+          
+          # Check if the request was successful
+          if [ "$http_code" -ne 200 ]; then
+            echo "Deployment failed with status $http_code"
+            echo "Response: $body"
+            exit 1
+          fi
+          
+          echo "Deployment successful!"
+          echo "Response: $body"
