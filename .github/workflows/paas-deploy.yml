@@ -52,11 +52,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build validation
+      - name: Create Dockerfile if not exists
         run: |
           if [ ! -f "Dockerfile" ]; then
             echo "No Dockerfile found, creating one..."
-            cat > Dockerfile << 'EOF'
+            cat > Dockerfile << 'DOCKERFILE'
             FROM node:20-alpine AS builder
             WORKDIR /app
             COPY package*.json ./
@@ -73,7 +73,7 @@ jobs:
 
             EXPOSE 3000
             CMD ["npm", "start"]
-            EOF
+            DOCKERFILE
           fi
 
   deploy:
@@ -94,7 +94,7 @@ jobs:
           set -e
           
           # Make the API call and store the response
-          response=$(curl -s -w "\n%{http_code}" -X POST "${PAAS_API_URL}/build-and-push-deploy" \
+          response=$(curl -s -w "\n%{http_code}" -X POST "${PAAS_API_URL}/api/v1/build-and-push-deploy" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${PAAS_ACCESS_TOKEN}" \
             -d "{\"repoFullName\":\"${{ github.repository }}\",\"accessToken\":\"${{ github.token }}\"}")
