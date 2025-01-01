@@ -56,26 +56,27 @@ jobs:
         run: |
           if [ ! -f "Dockerfile" ]; then
             echo "No Dockerfile found, creating one..."
-            cat > Dockerfile << 'EOL'
-          FROM node:20-alpine AS builder
-          WORKDIR /app
-          COPY package*.json ./
-          RUN npm install
-          COPY . .
-          RUN npm run build
-          
-          FROM node:20-alpine AS runner
-          WORKDIR /app
-          COPY --from=builder /app/.next ./.next
-          COPY --from=builder /app/node_modules ./node_modules
-          COPY --from=builder /app/package.json ./package.json
-          COPY --from=builder /app/public ./public
-          RUN apk add --no-cache git
-          
-          EXPOSE 3000
-          CMD ["npm", "start"]
-          EOL
+            cat > Dockerfile << 'EOF'
+            FROM node:20-alpine AS builder
+            WORKDIR /app
+            RUN apk add --no-cache git
+            COPY package*.json ./
+            RUN npm install
+            COPY . .
+            RUN npm run build
+
+            FROM node:20-alpine AS runner
+            WORKDIR /app
+            COPY --from=builder /app/.next ./.next
+            COPY --from=builder /app/node_modules ./node_modules
+            COPY --from=builder /app/package.json ./package.json
+            COPY --from=builder /app/public ./public
+
+            EXPOSE 3000
+            CMD ["npm", "start"]
+            EOF
           fi
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -83,9 +84,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git curl
+
       - name: Deploy to PaaS
         run: |
-          curl -X POST "${PAAS_API_URL}/build-and-push-deploy" \
+          curl -X POST "${PAAS_API_URL}/api/v1/build-and-push-deploy" \
           -H "Content-Type: application/json" \
           -H "Authorization: Bearer ${PAAS_ACCESS_TOKEN}" \
           -d "{\"repoFullName\":\"${{ github.repository }}\",\"accessToken\":\"${{ github.token }}\"}"
