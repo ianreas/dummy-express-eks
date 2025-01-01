@@ -85,7 +85,7 @@ jobs:
 
       - name: Deploy to PaaS
         run: |
-          curl -X POST "${PAAS_API_URL}/api/v1/build-and-push-deploy" \
+          curl -X POST "${PAAS_API_URL}/build-and-push-deploy" \
           -H "Content-Type: application/json" \
           -H "Authorization: Bearer ${PAAS_ACCESS_TOKEN}" \
           -d "{\"repoFullName\":\"${{ github.repository }}\",\"accessToken\":\"${{ github.token }}\"}"
