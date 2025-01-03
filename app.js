@@ -47,7 +47,7 @@ app.get("/", (req, res) => {
   res.json({ message: "Hello from Express.js on EKS!" });
 });
 
-app.get("/test", (req, res) => {
+app.get("/test-v1", (req, res) => {
   res.json({ message: "Github Actions works!" });
 });
 
